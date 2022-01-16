@@ -2,12 +2,14 @@ mod input_handler;
 mod events;
 mod term;
 mod config;
+mod storage;
 
 use std::io;
 
 use structopt::StructOpt;
 use term::Term;
 use config::Config;
+use storage::Storage;
 
 
 #[derive(StructOpt, Debug)]
@@ -30,7 +32,18 @@ enum Command {
         port: Option<String>,
         #[structopt(parse(from_os_str), short = "i", long = "input", help = "Input file otherwise stdin")]
         input: Option<std::path::PathBuf>,
+     },
+     #[structopt(about = "Storage")]
+     Storage {
+        #[structopt(subcommand, help = "Operation")]
+        cmd: StorageCommands,
      }
+}
+
+#[derive(StructOpt, Debug)]
+enum StorageCommands {
+    Ls,
+    Stream,
 }
 
 impl Cli {
@@ -47,8 +60,8 @@ impl Cli {
     }
 }
 
-
-fn main() -> io::Result<()> {
+#[tokio::main]
+async fn main() -> io::Result<()> {
     let cli = Cli::from_args();
     match cli.cmd {
         Command::Ls => {
@@ -74,6 +87,16 @@ fn main() -> io::Result<()> {
             let mut term = Term::init(cfg);
             term.watch();
         },
+        Command::Storage{cmd} => {
+            match cmd {
+                StorageCommands::Ls => {
+                    Storage::list().await;
+                }
+                StorageCommands::Stream => {
+                    Storage::read().await;
+                }
+            }
+        }
     }
     Ok(())
 }

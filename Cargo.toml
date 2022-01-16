@@ -1,7 +1,7 @@
 [package]
 name = "laser"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,3 +9,7 @@ edition = "2018"
 serialport = "4.0.1"
 structopt = "0.3.13"
 regex = "1"
+cloud-storage = "0.10.3"
+color-eyre = "0.5.11"
+futures = "0.3.19"
+tokio = { version = "1.15.0", features = ["full"] }
