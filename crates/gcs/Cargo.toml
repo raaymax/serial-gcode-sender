@@ -1,18 +1,11 @@
-[workspace]
-members = [
-  "crates/serial",
-  "crates/gcs",
-]
-
 [package]
-name = "laser"
+name = "gcs"
 version = "0.1.0"
 edition = "2021"
 
+
 [dependencies]
-serial = {path = "./crates/serial"}
-gcs = {path = "./crates/gcs"}
-structopt = "0.3.13"
+cloud-storage = "0.10.3"
 color-eyre = "0.5.11"
 futures = "0.3.19"
 tokio = { version = "1.15.0", features = ["full"] }

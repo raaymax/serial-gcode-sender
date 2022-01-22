@@ -1,16 +1,9 @@
-mod input_handler;
-mod events;
-mod term;
-mod config;
-mod storage;
-
 use std::io;
-
 use structopt::StructOpt;
-use term::Term;
-use config::Config;
-use storage::Storage;
+use std::fs::File;
 
+use gcs::Storage;
+use serial::Serial;
 
 #[derive(StructOpt, Debug)]
 struct Cli {
@@ -28,10 +21,10 @@ enum Command {
         baud: u32,
         #[structopt(short = "t", long = "timeout", default_value = "1000", help = "Serial port timeout")]
         timeout: u64,
-        #[structopt(help = "Serial port")]
+        #[structopt(short = "p", long = "port", help = "Serial port")]
         port: Option<String>,
-        #[structopt(parse(from_os_str), short = "i", long = "input", help = "Input file otherwise stdin")]
-        input: Option<std::path::PathBuf>,
+        #[structopt(subcommand)]
+        cmd: Option<StreamCommands>,
      },
      #[structopt(about = "Storage")]
      Storage {
@@ -41,59 +34,51 @@ enum Command {
 }
 
 #[derive(StructOpt, Debug)]
-enum StorageCommands {
-    Ls,
-    Stream,
+enum StreamCommands {
+    File{
+        path: std::path::PathBuf,
+    },
+    Gcs{
+        path: String
+    },
 }
 
-impl Cli {
-    fn get_config(&self) -> Option<Config> {
-        if let Command::Stream {ref port, timeout, baud, ref input} = self.cmd {
-            if let None = port {
-                let ports = serialport::available_ports().expect("No ports found!");
-                let p = ports.first().map(|f| f.port_name.clone());
-                return Some(Config {port: p, timeout, baud, input: input.clone()});
-            }
-            return Some(Config {port: port.clone(), timeout, baud, input: input.clone()});
-        }
-        return None;
-    }
+#[derive(StructOpt, Debug)]
+enum StorageCommands {
+    Ls,
 }
 
 #[tokio::main]
-async fn main() -> io::Result<()> {
+async fn main() -> Result<(), String> {
     let cli = Cli::from_args();
     match cli.cmd {
         Command::Ls => {
-            println!("Available ports:");
-            for ports in serialport::available_ports().into_iter() {
-                for port in ports {
-                    println!(" - {}", port.port_name);
-                    if let serialport::SerialPortType::UsbPort(info) = port.port_type {
-                        println!("\tproduct: {}", info.product.unwrap_or("None".to_string()));
-                        println!("\tmanufacturer: {}", info.manufacturer.unwrap_or("None".to_string()));
-                        println!("\tserial: {}", info.serial_number.unwrap_or("None".to_string()));
-                    }
-
-                }
-            }
+            serial::available_ports();
         },
-        Command::Stream{..} => {
-            let cfg = cli.get_config().unwrap();
-            if cfg.port == None {
+        Command::Stream{port, baud, timeout, cmd} => {
+            if port == None {
                 println!("No serial port");
                 return Ok(());
             }
-            let mut term = Term::init(cfg);
-            term.watch();
+            let connection = Serial::connect(port, baud, timeout);
+            match cmd {
+                Some(StreamCommands::File{path}) => {
+                    let f = File::open(path).map_err(|e|e.to_string())?;
+                    connection.send(&mut io::BufReader::new(f))
+                },
+                Some(StreamCommands::Gcs{path}) => {
+                    let mut b = Storage::read(path).await;
+                    connection.send(&mut b);
+                }
+                _ => {
+                    connection.send(&mut io::stdin().lock())
+                }
+            }
         },
         Command::Storage{cmd} => {
             match cmd {
                 StorageCommands::Ls => {
-                    Storage::list().await;
-                }
-                StorageCommands::Stream => {
-                    Storage::read().await;
+                    Storage::list().await?;
                 }
             }
         }
