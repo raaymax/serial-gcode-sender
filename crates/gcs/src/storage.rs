@@ -11,7 +11,6 @@ impl Storage {
         let client = Client::default();
         let mut stream = Box::pin(client.object().list("codecat_laser", ListRequest::default()).await.map_err(|err|err.to_string())?);
         while let Some(Ok(data)) = stream.next().await {
-            println!("{:?}", data.items);
             for item in data.items {
                 println!("{}", item.name);
             }
