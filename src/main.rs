@@ -26,8 +26,8 @@ enum Command {
         #[structopt(subcommand)]
         cmd: Option<StreamCommands>,
      },
-     #[structopt(about = "Storage")]
-     Storage {
+     #[structopt(about = "Google cloud storage")]
+     Gcs {
         #[structopt(subcommand, help = "Operation")]
         cmd: StorageCommands,
      }
@@ -35,9 +35,11 @@ enum Command {
 
 #[derive(StructOpt, Debug)]
 enum StreamCommands {
+    #[structopt(about = "Stream commands from file")]
     File{
         path: std::path::PathBuf,
     },
+    #[structopt(about = "Stream commands from gcs file")]
     Gcs{
         path: String
     },
@@ -45,6 +47,7 @@ enum StreamCommands {
 
 #[derive(StructOpt, Debug)]
 enum StorageCommands {
+    #[structopt(about = "List all files")]
     Ls,
 }
 
@@ -75,7 +78,7 @@ async fn main() -> Result<(), String> {
                 }
             }
         },
-        Command::Storage{cmd} => {
+        Command::Gcs{cmd} => {
             match cmd {
                 StorageCommands::Ls => {
                     Storage::list().await?;
