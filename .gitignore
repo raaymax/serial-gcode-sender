@@ -1,3 +1,3 @@
 target
 .envrc
-*.json
+secret.json
