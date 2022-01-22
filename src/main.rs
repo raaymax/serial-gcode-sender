@@ -59,10 +59,6 @@ async fn main() -> Result<(), String> {
             serial::available_ports();
         },
         Command::Stream{port, baud, timeout, cmd} => {
-            if port == None {
-                println!("No serial port");
-                return Ok(());
-            }
             let connection = Serial::connect(port, baud, timeout);
             match cmd {
                 Some(StreamCommands::File{path}) => {

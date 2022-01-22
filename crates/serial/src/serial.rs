@@ -34,10 +34,6 @@ impl Serial {
         return port_opt;
     }
 
-    pub fn list() -> Vec<serialport::SerialPortInfo> {
-        serialport::available_ports().unwrap()
-    }
-
     fn handle_events(&mut self, tx: Sender<EventCommand>, rx: Receiver<Event>) {
         let mut serial = self.serial.try_clone().unwrap();
         std::thread::spawn(move || {
