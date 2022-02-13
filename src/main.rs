@@ -17,6 +17,7 @@ enum Command {
     Ls,
     #[structopt(about = "Stream commands to serial device")]
     Stream {
+
         #[structopt(short = "b", long = "baud", default_value = "115200", help = "Baud rate")]
         baud: u32,
         #[structopt(short = "t", long = "timeout", default_value = "1000", help = "Serial port timeout")]
@@ -53,7 +54,8 @@ enum StorageCommands {
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-    let cli = Cli::from_args();
+    let cli =  Cli::from_args();
+
     match cli.cmd {
         Command::Ls => {
             serial::available_ports();
@@ -62,12 +64,12 @@ async fn main() -> Result<(), String> {
             let connection = Serial::connect(port, baud, timeout);
             match cmd {
                 Some(StreamCommands::File{path}) => {
-                    let f = File::open(path).map_err(|e|e.to_string())?;
-                    connection.send(&mut io::BufReader::new(f))
+                    let file = File::open(path).map_err(|e|e.to_string())?;
+                    connection.send(&mut io::BufReader::new(file))
                 },
                 Some(StreamCommands::Gcs{path}) => {
-                    let mut b = Storage::read(path).await;
-                    connection.send(&mut b);
+                    let mut buf_reader = Storage::read(path).await;
+                    connection.send(&mut buf_reader);
                 }
                 _ => {
                     connection.send(&mut io::stdin().lock())
