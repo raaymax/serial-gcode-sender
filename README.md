@@ -11,6 +11,7 @@ target/release/laser --help
 
 ## Usage
 ```sh
+# laser --help
 USAGE:
     laser <SUBCOMMAND>
 
