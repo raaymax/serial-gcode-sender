@@ -26,5 +26,6 @@ SUBCOMMANDS:
     stream    Stream commands to serial device
 ```
 
-## Licence
-MIT
+## MIT License
+
+Copyright (c) 2023 Mateusz Russak
